@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, bill_table %}
+
+{% block title %}Tunggakan{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head"><h1>Tunggakan per {{ today|tanggal }}</h1></div>
+    <div class="kpi-strip kpi-2" style="margin: 0 0 24px;">
+        <div class="kpi danger"><span><div class="kpi-value">{{ total|rupiah }}</div><div class="kpi-label">Total tunggakan</div></span></div>
+        <div class="kpi"><span><div class="kpi-value">{{ rows|length }}</div><div class="kpi-label">Item</div></span></div>
+    </div>
+    {% if rows %}
+        {{ bill_table(rows) }}
+    {% else %}
+        {{ empty('Tidak ada tunggakan', 'Semua tagihan jatuh tempo sudah lunas.') }}
+    {% endif %}
+</div>
+{% endblock %}

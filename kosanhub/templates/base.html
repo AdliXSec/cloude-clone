@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}KosanHub{% endblock %} · KosanHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body id="{{ (request.endpoint or 'page')|replace('.', '_') }}">
+{% set user = current_user() %}
+{% if user %}
+{% set nav = [
+    ('web.dashboard', 'Dashboard'),
+    ('admin.bookings', 'Pengajuan'),
+    ('web.properties', 'Properti'),
+    ('web.rooms', 'Kamar'),
+    ('web.tenants', 'Penyewa'),
+    ('web.contracts', 'Kontrak'),
+    ('web.bills', 'Tagihan'),
+    ('web.payments', 'Pembayaran'),
+    ('web.arrears', 'Tunggakan'),
+    ('web.jobs', 'Job'),
+    ('admin.users_list', 'User'),
+] %}
+{% else %}
+{% set nav = [
+    ('public.home', 'Kamar'),
+    ('public.status', 'Cek Status'),
+] %}
+{% endif %}
+
+{% if not user %}
+<div class="utility">
+    <div class="utility-inner">
+        <span><span class="dot"></span>Kos nyaman, booking tanpa ribet</span>
+        <a class="hide-sm" href="{{ url_for('auth.login') }}">Login admin</a>
+    </div>
+</div>
+{% endif %}
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="{{ url_for('web.dashboard') if user else url_for('public.home') }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 9.2V21a1 1 0 0 0 1 1h5.5v-6.5h5V22H20a1 1 0 0 0 1-1V9.2L12 2.5z"/></svg>
+            KosanHub
+        </a>
+        <nav class="nav" aria-label="Navigasi utama">
+            {% for endpoint, label in nav %}
+            <a href="{{ url_for(endpoint) }}" class="nav-link{% if request.endpoint == endpoint %} active{% endif %}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>{{ label }}</a>
+            {% endfor %}
+            {% if user %}
+            <form method="post" action="{{ url_for('auth.logout') }}" class="nav-mobile-only">
+                {{ csrf_input() }}
+                <button type="submit" class="btn btn-outline btn-block">Logout</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="nav-link nav-mobile-only">Masuk admin</a>
+            {% endif %}
+        </nav>
+        <div class="topbar-user">
+            {% if user %}
+            <a href="{{ url_for('admin.profile') }}" class="profile-pill" title="Profil">
+                <span class="avatar">{{ user.email[0]|upper }}</span>
+                <span class="email">{{ user.email }}</span>
+            </a>
+            <form method="post" action="{{ url_for('auth.logout') }}" class="btn-logout-wrap">
+                {{ csrf_input() }}
+                <button type="submit" class="btn-outline btn-sm">Logout</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn-outline btn-sm hide-sm">Masuk</a>
+            {% endif %}
+        </div>
+        <button type="button" class="nav-toggle" aria-label="Buka menu">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+    </div>
+</header>
+
+<div class="toasts" aria-live="polite">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    {% set cat = 'ok' if category == 'ok' else 'error' %}
+    <div class="toast toast-{{ cat }}" role="{{ 'status' if cat == 'ok' else 'alert' }}">
+        {% if cat == 'ok' %}
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></svg>
+        {% else %}
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>
+        {% endif %}
+        <p>{{ message }}</p>
+        <button type="button" class="toast-close" aria-label="Tutup">×</button>
+    </div>
+    {% endfor %}
+    {% endwith %}
+</div>
+
+<main class="page">
+    {% block content %}{% endblock %}
+</main>
+
+{% if not user %}
+<footer class="footer">
+    <div class="footer-inner">
+        <div>
+            <a class="brand" href="{{ url_for('public.home') }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 9.2V21a1 1 0 0 0 1 1h5.5v-6.5h5V22H20a1 1 0 0 0 1-1V9.2L12 2.5z"/></svg>
+                KosanHub
+            </a>
+            <p>Cari kamar kos, ajukan sewa, dan pantau tagihan Anda dalam satu tempat.</p>
+        </div>
+        <div>
+            <h3>Jelajahi</h3>
+            <a href="{{ url_for('public.home') }}">Daftar kamar</a>
+            <a href="{{ url_for('public.status') }}">Cek status pengajuan</a>
+        </div>
+        <div>
+            <h3>Pengelola</h3>
+            <a href="{{ url_for('auth.login') }}">Masuk admin</a>
+        </div>
+    </div>
+    <div class="footer-bottom">© KosanHub</div>
+</footer>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

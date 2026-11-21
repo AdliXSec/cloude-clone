@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status %}
+
+{% block title %}Catat pembayaran{% endblock %}
+
+{% block content %}
+{% set c = bill.contract %}
+<div class="section">
+    <a class="breadcrumb" href="{{ back }}">
+        <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+        Kembali
+    </a>
+    <div class="pay-layout">
+        <aside class="summary-card">
+            <h2>Ringkasan tagihan</h2>
+            <dl class="dl">
+                <div><dt>Penyewa</dt><dd>{{ c.tenant.name }}</dd></div>
+                <div><dt>Kamar</dt><dd>{{ c.room.kos_property.name }} / {{ c.room.number }}</dd></div>
+                <div><dt>Periode</dt><dd class="mono">{{ '%04d-%02d'|format(bill.period_year, bill.period_month) }}</dd></div>
+                <div><dt>Jatuh tempo</dt><dd>{{ bill.due_date|tanggal }}</dd></div>
+                <div><dt>Status</dt><dd>{% if snap.days_late %}<span class="badge badge-overdue">Terlambat {{ snap.days_late }} hari</span>{% else %}{{ status(bill.status) }}{% endif %}</dd></div>
+                <div><dt>Tagihan pokok</dt><dd>{{ bill.base_amount|rupiah }}</dd></div>
+                <div><dt>Denda{% if snap.late_percent %} ({{ snap.late_percent }}%){% endif %}</dt><dd>{{ snap.late_fee|rupiah }}</dd></div>
+                <div><dt>Sudah dibayar</dt><dd>{{ bill.paid_amount|rupiah }}</dd></div>
+                <div class="total"><dt>Sisa per {{ today|tanggal }}</dt><dd data-outstanding="{{ snap.outstanding }}">{{ snap.outstanding|rupiah }}</dd></div>
+            </dl>
+        </aside>
+
+        <div class="form-card">
+            <div class="form-head">
+                <h1>Catat pembayaran</h1>
+                <p class="lead">Bayar sebagian boleh. Tagihan otomatis lunas kalau sisa sudah tertutup.</p>
+            </div>
+            <form method="post">
+                {{ csrf_input() }}
+                <label class="field">
+                    <span>Jumlah (Rp) <span class="muted" aria-hidden="true">*</span></span>
+                    <input type="number" name="amount" value="{{ values.get('amount', '') }}" min="1" required autofocus>
+                    <span class="hint" data-hint="payment" aria-live="polite"></span>
+                </label>
+                <button type="button" class="btn-ghost btn-sm" data-action="fill-outstanding">Isi sisa tagihan</button>
+                <div class="field-row" style="margin-top: 18px;">
+                    <label class="field">
+                        <span>Tanggal bayar <span class="muted" aria-hidden="true">*</span></span>
+                        <input type="date" name="paid_on" value="{{ values.get('paid_on', '') }}" required>
+                    </label>
+                    <label class="field">
+                        <span>Metode <span class="muted" aria-hidden="true">*</span></span>
+                        <input type="text" name="method" value="{{ values.get('method', '') }}" list="pay-methods" maxlength="30" required>
+                        <datalist id="pay-methods">
+                            <option value="TRANSFER"></option>
+                            <option value="TUNAI"></option>
+                            <option value="QRIS"></option>
+                        </datalist>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <a class="btn-link" href="{{ back }}">Batal</a>
+                    <button type="submit" class="btn">Simpan pembayaran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

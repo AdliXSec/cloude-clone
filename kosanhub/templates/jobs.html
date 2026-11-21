@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status, empty %}
+
+{% block title %}Job{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <div>
+            <h1>Job tagihan</h1>
+            <p class="lead">Job diproses oleh <code>worker.py</code>. Waktu dalam WIB.</p>
+        </div>
+        <form method="post" action="{{ url_for('admin.job_generate') }}" class="head-actions">
+            {{ csrf_input() }}
+            <button type="submit" class="btn btn-sm" data-action="open-generate-billing">Generate tagihan</button>
+        </form>
+    </div>
+    {% if jobs %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Periode</th>
+                    <th>Status</th>
+                    <th>Masuk</th>
+                    <th>Selesai</th>
+                    <th class="num">Dibuat</th>
+                    <th class="num">Dilewati</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for j in jobs %}
+                <tr data-job-id="{{ j.id }}" data-job-status="{{ j.status }}">
+                    <td class="mono">#{{ j.id }}</td>
+                    <td class="mono">{{ '%04d-%02d'|format(j.period_year, j.period_month) }}</td>
+                    <td data-job-status="{{ j.status }}">{{ status(j.status) }}</td>
+                    <td class="small">{{ j.created_at|waktu_wib }}</td>
+                    <td class="small">{{ j.finished_at|waktu_wib }}</td>
+                    <td class="num" data-job-created>{{ j.created_count }}</td>
+                    <td class="num" data-job-skipped>{{ j.skipped_count }}</td>
+                    <td class="small" data-job-error>{{ j.error or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty('Belum ada job', 'Klik Generate tagihan untuk memasukkan job ke antrean.') }}
+    {% endif %}
+</div>
+{% endblock %}

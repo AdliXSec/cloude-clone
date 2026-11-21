@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+
+{% block title %}Kamar{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Kamar</h1>
+        <div class="head-actions"><a href="{{ url_for('admin.room_new') }}" class="btn btn-sm">+ Tambah kamar</a></div>
+    </div>
+    {% if rooms %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 64px;">Foto</th>
+                    <th>Properti</th>
+                    <th>Nomor</th>
+                    <th class="num">Harga/bulan</th>
+                    <th>Status</th>
+                    <th>Penyewa</th>
+                    <th class="num">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rooms %}
+                <tr>
+                    <td>
+                        {% if r.image %}
+                        <img src="{{ url_for('static', filename=r.image) }}" alt="Foto kamar #{{ r.number }}" style="width:52px;height:40px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border-light);display:block;">
+                        {% else %}
+                        <div style="width:52px;height:40px;border-radius:var(--radius-sm);background:var(--bg-subtle);border:1px dashed var(--border-input);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);" title="Belum ada foto">
+                            <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true" style="opacity:0.45;"><path d="M3 20V9.5L12 4l9 5.5V20"/><path d="M3 20h18"/><rect x="9" y="12" width="6" height="8" rx="1"/></svg>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.kos_property.name }}</td>
+                    <td class="mono strong">{{ r.number }}</td>
+                    <td class="num">{{ r.monthly_price|rupiah }}</td>
+                    <td>{% if r.active_contract %}<span class="badge badge-occupied">Ditempati</span>{% else %}<span class="badge badge-available">Kosong</span>{% endif %}</td>
+                    <td>{{ r.active_contract.tenant.name if r.active_contract else '—' }}</td>
+                    <td class="num">
+                        <div class="row-actions">
+                            <a href="{{ url_for('admin.room_edit', room_id=r.id) }}" class="btn-outline btn-sm">Edit</a>
+                            <form method="post" action="{{ url_for('admin.room_delete', room_id=r.id) }}" data-confirm="Hapus kamar {{ r.number }}?">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn-danger-outline btn-sm">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty('Belum ada kamar', 'Tambahkan kamar ke properti.') }}
+    {% endif %}
+</div>
+{% endblock %}

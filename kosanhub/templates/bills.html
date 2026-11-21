@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, bill_table %}
+
+{% block title %}Tagihan{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Tagihan</h1>
+        <form method="post" action="{{ url_for('admin.job_generate') }}" class="head-actions">
+            {{ csrf_input() }}
+            <button type="submit" class="btn btn-sm" data-action="open-generate-billing">Generate tagihan</button>
+        </form>
+    </div>
+    {% if rows %}
+        {{ bill_table(rows) }}
+    {% else %}
+        {{ empty('Belum ada tagihan', 'Klik Generate tagihan untuk membuat tagihan bulanan.') }}
+    {% endif %}
+</div>
+{% endblock %}

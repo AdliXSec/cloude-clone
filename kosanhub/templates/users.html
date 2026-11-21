@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}User{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Kelola User</h1>
+        <div class="actions">
+            <a href="{{ url_for('admin.users_new') }}" class="btn btn-sm">+ Tambah user</a>
+        </div>
+    </div>
+    {% if users %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Dibuat</th>
+                    <th class="num">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.email }}{% if u.id == current.id %} <span class="muted">(kamu)</span>{% endif %}</td>
+                    <td class="small">{{ u.created_at|tanggal }}</td>
+                    <td class="num">
+                        <div class="actions" style="justify-content: flex-end; gap: 4px;">
+                            {% if u.id != current.id %}
+                            <form method="post" action="{{ url_for('admin.users_delete', user_id=u.id) }}" style="display: inline;" onsubmit="return confirm('Hapus user {{ u.email }}?')">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn-ghost btn-danger">Hapus</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty">Tidak ada user</p>
+    {% endif %}
+</div>
+{% endblock %}

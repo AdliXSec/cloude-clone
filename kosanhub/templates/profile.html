@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h1>Profile</h1>
+    <div class="form-card" style="max-width: 400px;">
+        <h3>{{ user.email }}</h3>
+        <p class="small muted">Dibuat {{ user.created_at|tanggal }}</p>
+        <form method="post" style="margin-top: 24px;">
+            {{ csrf_input() }}
+            <label class="field">
+                <span>Password lama</span>
+                <input type="password" name="current_password" required autocomplete="current-password">
+            </label>
+            <label class="field">
+                <span>Password baru</span>
+                <input type="password" name="new_password" required minlength="8" autocomplete="new-password">
+                <small>Minimal 8 karakter</small>
+            </label>
+            <label class="field">
+                <span>Ulangi password baru</span>
+                <input type="password" name="confirm_password" required minlength="8" autocomplete="new-password">
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn">Ubah password</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

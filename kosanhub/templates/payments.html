@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+
+{% block title %}Pembayaran{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head"><h1>Riwayat pembayaran</h1></div>
+    <div class="kpi-strip kpi-2" style="margin: 0 0 24px;">
+        <div class="kpi"><span><div class="kpi-value">{{ total|rupiah }}</div><div class="kpi-label">Total diterima</div></span></div>
+        <div class="kpi"><span><div class="kpi-value">{{ payments|length }}</div><div class="kpi-label">Transaksi</div></span></div>
+    </div>
+    {% if payments %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal bayar</th>
+                    <th>Penyewa</th>
+                    <th>Kamar</th>
+                    <th>Periode</th>
+                    <th>Metode</th>
+                    <th class="num">Nominal</th>
+                    <th>Dicatat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                {% set b = p.bill %}
+                <tr>
+                    <td>{{ p.paid_on|tanggal }}</td>
+                    <td class="strong">{{ b.contract.tenant.name }}</td>
+                    <td>{{ b.contract.room.kos_property.name }} <span class="sub">/ {{ b.contract.room.number }}</span></td>
+                    <td class="mono">{{ '%04d-%02d'|format(b.period_year, b.period_month) }}</td>
+                    <td><span class="badge badge-method">{{ p.method }}</span></td>
+                    <td class="num strong">{{ p.amount|rupiah }}</td>
+                    <td class="small">{{ p.created_at|waktu_wib }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty('Belum ada pembayaran', 'Pembayaran muncul setelah tagihan dibayar.') }}
+    {% endif %}
+</div>
+{% endblock %}

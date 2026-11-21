@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="section form-narrow">
+    <a class="breadcrumb" href="{{ back }}">
+        <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+        Kembali
+    </a>
+    <div class="form-card">
+        <div class="form-head">
+            <h1>{{ title }}</h1>
+            {% if lead %}<p class="lead">{{ lead }}</p>{% endif %}
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {{ csrf_input() }}
+            {% for f in fields %}
+            <label class="field">
+                <span>{{ f.label }}{% if f.required %} <span class="muted" aria-hidden="true">*</span>{% endif %}</span>
+                {% if f.type == 'select' %}
+                <select name="{{ f.name }}"{% if f.required %} required{% endif %}>
+                    <option value="">Pilih…</option>
+                    {% for value, label in f.options %}
+                    <option value="{{ value }}"{% if f.prices and f.prices.get(value) is not none %} data-price="{{ f.prices.get(value) }}"{% endif %}{% if values.get(f.name)|string == value|string %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% elif f.type == 'textarea' %}
+                <textarea name="{{ f.name }}"{% if f.required %} required{% endif %}>{{ values.get(f.name, '') }}</textarea>
+                {% elif f.type == 'file' %}
+                {% if values.get(f.name) %}
+                <div class="file-current-preview" style="margin-bottom: 10px;">
+                    <span class="small muted" style="display:block; margin-bottom: 6px;">Gambar saat ini:</span>
+                    <img src="{{ url_for('static', filename=values.get(f.name)) }}" alt="Pratinjau gambar" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-md); border: 1px solid var(--border-light); object-fit: cover; display: block; box-shadow: var(--shadow-sm);">
+                </div>
+                {% endif %}
+                <input type="file" name="{{ f.name }}"{% if f.accept %} accept="{{ f.accept }}"{% endif %}>
+                {% if values.get(f.name) %}
+                <small class="muted">Pilih file baru jika ingin mengganti gambar saat ini.</small>
+                {% endif %}
+                {% elif f.type == 'password' %}
+                <div class="pw">
+                    <input type="password" name="{{ f.name }}" value="{{ values.get(f.name, '') }}"{% if f.required %} required{% endif %}{% if loop.first %} autofocus{% endif %}>
+                    <button type="button" class="pw-btn" aria-label="Tampilkan password">
+                        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                {% else %}
+                <input type="{{ f.type }}" name="{{ f.name }}" value="{{ values.get(f.name, '') }}"{% if f.required %} required{% endif %}{% if f.min is defined %} min="{{ f.min }}"{% endif %}{% if loop.first %} autofocus{% endif %}>
+                {% endif %}
+                {% if f.help %}<small>{{ f.help }}</small>{% endif %}
+            </label>
+            {% endfor %}
+            <div class="form-actions">
+                <a class="btn-link" href="{{ back }}">Batal</a>
+                <button type="submit" class="btn">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

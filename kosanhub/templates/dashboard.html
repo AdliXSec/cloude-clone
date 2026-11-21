@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, bill_table %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="lead">Ringkasan operasional per {{ today|tanggal }}.</p>
+        </div>
+        <div class="head-actions">
+            <a href="{{ url_for('admin.contract_new') }}" class="btn btn-sm">+ Sewakan kamar</a>
+        </div>
+    </div>
+    <div class="kpi-strip">
+        <a class="kpi" href="{{ url_for('web.properties') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/></svg></span>
+            <span><div class="kpi-value">{{ stats.properties }}</div><div class="kpi-label">Properti</div></span>
+        </a>
+        <a class="kpi" href="{{ url_for('web.rooms') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="15" cy="12" r=".8"/></svg></span>
+            <span><div class="kpi-value">{{ stats.rooms_occupied }}<small>/ {{ stats.rooms_total }}</small></div><div class="kpi-label">Kamar terisi</div></span>
+        </a>
+        <a class="kpi" href="{{ url_for('web.tenants') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
+            <span><div class="kpi-value">{{ stats.tenants }}</div><div class="kpi-label">Penyewa</div></span>
+        </a>
+        <a class="kpi" href="{{ url_for('web.contracts') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg></span>
+            <span><div class="kpi-value">{{ stats.active_contracts }}</div><div class="kpi-label">Kontrak aktif</div></span>
+        </a>
+    </div>
+    <div class="kpi-strip kpi-2">
+        <a class="kpi" href="{{ url_for('web.bills') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>
+            <span><div class="kpi-value">{{ stats.unpaid_bills }}</div><div class="kpi-label">Tagihan belum lunas</div></span>
+        </a>
+        <a class="kpi danger" href="{{ url_for('web.arrears') }}">
+            <span class="kpi-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.1"/></svg></span>
+            <span><div class="kpi-value">{{ stats.arrears_total|rupiah }}</div><div class="kpi-label">Total tunggakan</div></span>
+        </a>
+    </div>
+</div>
+
+<div class="section">
+    <div class="page-head">
+        <h2>Tunggakan terkini <span class="muted">({{ stats.arrears_count }} total)</span></h2>
+        <div class="head-actions"><a href="{{ url_for('web.arrears') }}" class="btn-outline btn-sm">Lihat semua</a></div>
+    </div>
+    {% if arrears %}
+        {{ bill_table(arrears) }}
+    {% else %}
+        {{ empty('Tidak ada tunggakan', 'Semua tagihan sudah beres.') }}
+    {% endif %}
+</div>
+{% endblock %}

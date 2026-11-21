@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status, empty %}
+
+{% block title %}Kontrak{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Kontrak</h1>
+        <div class="head-actions"><a href="{{ url_for('admin.contract_new') }}" class="btn btn-sm">+ Sewakan kamar</a></div>
+    </div>
+    {% if contracts %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Penyewa</th>
+                    <th>Kamar</th>
+                    <th>Mulai</th>
+                    <th>Selesai</th>
+                    <th class="num">Harga/bulan</th>
+                    <th>Status</th>
+                    <th class="num">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contracts %}
+                <tr>
+                    <td class="strong">{{ c.tenant.name }}</td>
+                    <td>{{ c.room.kos_property.name }} <span class="sub">/ {{ c.room.number }}</span></td>
+                    <td>{{ c.start_date|tanggal }}</td>
+                    <td>{{ c.end_date|tanggal }}</td>
+                    <td class="num">{{ c.monthly_price|rupiah }}</td>
+                    <td>{{ status(c.status) }}</td>
+                    <td class="num">
+                        {% if c.status == 'ACTIVE' %}
+                        <div class="row-actions">
+                            <form method="post" action="{{ url_for('admin.contract_end', contract_id=c.id) }}">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn-danger-outline btn-sm" data-action="end-contract" data-contract-id="{{ c.id }}" data-contract-desc="{{ c.tenant.name }} · {{ c.room.kos_property.name }} / {{ c.room.number }}">Akhiri</button>
+                            </form>
+                        </div>
+                        {% else %}<span class="muted">—</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty('Belum ada kontrak', 'Sewakan kamar kosong ke penyewa.') }}
+    {% endif %}
+</div>
+{% endblock %}

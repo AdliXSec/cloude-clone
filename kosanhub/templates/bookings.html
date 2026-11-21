@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Pengajuan Sewa{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Pengajuan Sewa</h1>
+        <span class="small">{{ pending }} menunggu keputusan</span>
+    </div>
+    <div class="tab-strip" role="tablist" aria-label="Filter status">
+        {% for key, label in [('PENDING', 'Menunggu'), ('APPROVED', 'Disetujui'), ('REJECTED', 'Ditolak'), ('ALL', 'Semua')] %}
+        <a href="{{ url_for('admin.bookings', status=key) }}" class="chip{% if status == key %} active{% endif %}" role="tab"{% if status == key %} aria-selected="true"{% endif %}>{{ label }}{% if key == 'PENDING' and pending %} <span class="chip-count">{{ pending }}</span>{% endif %}</a>
+        {% endfor %}
+    </div>
+    {% if bookings %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Diajukan</th>
+                    <th>Pemohon</th>
+                    <th>Kamar</th>
+                    <th>Mulai</th>
+                    <th>Catatan</th>
+                    <th>Status</th>
+                    <th class="num">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td>{{ b.created_at|waktu_wib }}</td>
+                    <td>
+                        <div>{{ b.name }}</div>
+                        <div class="small">{{ b.email }} · {{ b.phone }}</div>
+                    </td>
+                    <td>{{ b.room.kos_property.name }} / <span class="mono">#{{ b.room.number }}</span><div class="small">{{ b.room.monthly_price|rupiah }}/bln</div></td>
+                    <td>{{ b.start_date|tanggal }}</td>
+                    <td class="small">{{ b.notes or '—' }}</td>
+                    <td>
+                        <span class="badge badge-{{ b.status|lower }}">{{ {'PENDING': 'Menunggu', 'APPROVED': 'Disetujui', 'REJECTED': 'Ditolak'}[b.status] }}</span>
+                        {% if b.decided_at %}<div class="small">{{ b.decided_at|waktu_wib }}{% if b.decider %} · {{ b.decider.email }}{% endif %}</div>{% endif %}
+                    </td>
+                    <td class="num">
+                        {% if b.status == 'PENDING' %}
+                        <div class="actions">
+                            <form method="post" action="{{ url_for('admin.booking_approve', booking_id=b.id) }}" onsubmit="return confirm('Setujui pengajuan {{ b.name|e }} untuk kamar #{{ b.room.number|e }}? Penyewa dan kontrak aktif akan dibuat.')">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn btn-sm">Setujui</button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin.booking_reject', booking_id=b.id) }}" onsubmit="return confirm('Tolak pengajuan {{ b.name|e }}?')">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn-ghost btn-danger">Tolak</button>
+                            </form>
+                        </div>
+                        {% elif b.contract_id %}
+                        <span class="small">Kontrak #{{ b.contract_id }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty">Tidak ada pengajuan</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Masuk{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-visual">
+        <h2>Kelola kos lebih rapi, dari kamar sampai tagihan.</h2>
+        <p>Kontrak, tagihan bulanan, pembayaran, dan tunggakan dalam satu dasbor.</p>
+    </div>
+    <div class="auth-form">
+        <a class="brand" href="{{ url_for('public.home') }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 9.2V21a1 1 0 0 0 1 1h5.5v-6.5h5V22H20a1 1 0 0 0 1-1V9.2L12 2.5z"/></svg>
+            KosanHub
+        </a>
+        <h1>Masuk</h1>
+        <p class="lead">Khusus admin KosanHub.</p>
+        <form method="post">
+            {{ csrf_input() }}
+            <label class="field">
+                <span>Email</span>
+                <input type="email" name="email" value="{{ email }}" required autofocus autocomplete="username">
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <div class="pw">
+                    <input type="password" name="password" required autocomplete="current-password">
+                    <button type="button" class="pw-btn" aria-label="Tampilkan password">
+                        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </label>
+            <button type="submit" class="btn btn-block">Masuk</button>
+        </form>
+        <p class="small" style="margin-top: 18px;">Calon penyewa? <a href="{{ url_for('public.home') }}">Lihat kamar tersedia</a></p>
+    </div>
+</div>
+{% endblock %}

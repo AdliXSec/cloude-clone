@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+
+{% block title %}Properti{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="page-head">
+        <h1>Properti</h1>
+        {% if current_user() %}
+        <div class="head-actions"><a href="{{ url_for('admin.property_new') }}" class="btn btn-sm">+ Tambah properti</a></div>
+        {% endif %}
+    </div>
+    {% if properties %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Alamat</th>
+                    <th class="num">Kamar</th>
+                    {% if current_user() %}<th class="num">Aksi</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in properties %}
+                <tr>
+                    <td class="strong">{{ p.name }}</td>
+                    <td>{{ p.address }}</td>
+                    <td class="num">{{ p.rooms|length }}</td>
+                    {% if current_user() %}
+                    <td class="num">
+                        <div class="row-actions">
+                            <a href="{{ url_for('admin.property_edit', prop_id=p.id) }}" class="btn-outline btn-sm">Edit</a>
+                            <form method="post" action="{{ url_for('admin.property_delete', prop_id=p.id) }}" data-confirm="Hapus properti {{ p.name }}?">
+                                {{ csrf_input() }}
+                                <button type="submit" class="btn-danger-outline btn-sm">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ empty('Belum ada properti', 'Tambahkan properti pertama untuk mulai.') }}
+    {% endif %}
+</div>
+{% endblock %}

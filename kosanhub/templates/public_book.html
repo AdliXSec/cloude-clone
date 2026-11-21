@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_public.html" import thumb, back %}
+
+{% block title %}Ajukan sewa · Kamar {{ room.number }}{% endblock %}
+
+{% block content %}
+<div class="section">
+    {{ back(url_for('public.room_detail', room_id=room.id), 'Detail kamar') }}
+    <div class="book-layout">
+        <form method="post" class="form-card" novalidate>
+            {{ csrf_input() }}
+            <h1>Ajukan sewa</h1>
+            <p class="lead" style="margin-bottom:24px;">Isi data diri. Tidak perlu membuat akun.</p>
+
+            <label class="field">
+                <span>Nama lengkap</span>
+                <input type="text" name="name" value="{{ values.get('name', '') }}" required autofocus autocomplete="name">
+            </label>
+            <div class="field-row">
+                <label class="field">
+                    <span>Email</span>
+                    <input type="email" name="email" value="{{ values.get('email', '') }}" required autocomplete="email">
+                </label>
+                <label class="field">
+                    <span>Nomor HP</span>
+                    <input type="tel" name="phone" value="{{ values.get('phone', '') }}" placeholder="+62812..." required autocomplete="tel">
+                </label>
+            </div>
+            <small class="muted" style="display:block;margin:-6px 0 18px;">Email dan nomor HP dipakai untuk mengecek status pengajuan. 8–15 digit, boleh diawali +.</small>
+            <label class="field">
+                <span>Tanggal mulai sewa</span>
+                <input type="date" name="start_date" value="{{ values.get('start_date', '') }}" min="{{ today.isoformat() if today else '' }}" required>
+            </label>
+            <label class="field">
+                <span>Catatan (opsional)</span>
+                <textarea name="notes" rows="3">{{ values.get('notes', '') }}</textarea>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn">Kirim pengajuan</button>
+                <a class="btn-link" href="{{ url_for('public.room_detail', room_id=room.id) }}">Batal</a>
+            </div>
+        </form>
+
+        <aside class="book-card">
+            <div class="mini-room">
+                {{ thumb(room.id) }}
+                <div>
+                    <b>{{ room.kos_property.name }}</b>
+                    <div class="muted small">Kamar <span class="mono">#{{ room.number }}</span></div>
+                </div>
+            </div>
+            <div class="price-xl">{{ room.monthly_price|rupiah }} <span>/ bulan</span></div>
+            <p class="muted small" style="margin-top:12px;">Pembayaran dikelola admin setelah pengajuan disetujui. Tagihan muncul di halaman status.</p>
+        </aside>
+    </div>
+</div>
+{% endblock %}

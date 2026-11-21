@@ -1,0 +1,81 @@
+# App + worker memakai image yang SAMA (APP_IMAGE), hanya command yang beda.
+# Production: image ditarik dari Docker Hub (docker compose -f compose.prod.yaml pull).
+# Build lokal: pakai compose.yaml (docker compose up -d --build).
+# Di pipeline: APP_IMAGE=<dockerhub-user>/kosanhub:<BUILD_NUMBER>
+x-app-env: &app-env
+  FLASK_APP: wsgi.py
+  DB_HOST: db
+  DB_PORT: "3306"
+  DB_NAME: ${DB_NAME:-kosanhub}
+  DB_USER: ${DB_USER:-kosanhub}
+  DB_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di .env}
+  BILL_DUE_DAY: ${BILL_DUE_DAY:-10}
+  WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-3}
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?isi MYSQL_ROOT_PASSWORD di .env}
+      MYSQL_DATABASE: ${DB_NAME:-kosanhub}
+      MYSQL_USER: ${DB_USER:-kosanhub}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di .env}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  app:
+    image: ${APP_IMAGE:-dockeradli/kosanhub:latest}
+    environment: *app-env
+    # migrasi -> seeder (idempoten, matikan dengan AUTO_SEED=0) -> web server
+    command: >
+      sh -c "flask db upgrade
+      && if [ \"$${AUTO_SEED:-1}\" = 1 ]; then flask seed; fi
+      && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 60 wsgi:app"
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - uploads_data:/app/kosanhub/static/images/rooms
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  worker:
+    image: ${APP_IMAGE:-dockeradli/kosanhub:latest}
+    environment: *app-env
+    command: python worker.py
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_healthy   # tunggu migrasi selesai
+    networks:
+      - backend
+    restart: unless-stopped
+
+networks:
+  frontend: {}
+  backend:
+    internal: true   # DB & worker tidak bisa diakses dari luar
+
+volumes:
+  db_data:
+  uploads_data:
