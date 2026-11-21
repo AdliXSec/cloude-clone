@@ -113,6 +113,46 @@ def test_rule_1_room_single_active_contract(app, seed_data):
 
 
 # ==========================================
+# TEST 2b: Aturan Bisnis 1 dijaga juga oleh database (bukan hanya cek di aplikasi)
+# ==========================================
+def test_rule_1_enforced_by_database_constraint(app, seed_data):
+    from sqlalchemy.exc import IntegrityError
+
+    room1, tenant1, tenant2 = seed_data["room1"], seed_data["tenant1"], seed_data["tenant2"]
+    # Simulasi dua request bersamaan yang sama-sama lolos cek aplikasi: insert langsung ke tabel.
+    db.session.add(Contract(room_id=room1.id, tenant_id=tenant1.id, start_date=date(2026, 11, 1),
+                            monthly_price=1000000, status=Contract.ACTIVE))
+    db.session.commit()
+    db.session.add(Contract(room_id=room1.id, tenant_id=tenant2.id, start_date=date(2026, 11, 2),
+                            monthly_price=1000000, status=Contract.ACTIVE))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_rule_1_room_reusable_after_contract_ended(app, seed_data):
+    from kosanhub.services.contracts import end_contract
+
+    room1, tenant1, tenant2 = seed_data["room1"], seed_data["tenant1"], seed_data["tenant2"]
+    c1 = create_contract(room1.id, tenant1.id, date(2026, 10, 1))
+    db.session.commit()
+    end_contract(c1, date(2026, 10, 31))
+    db.session.commit()
+    assert c1.active_room_id is None
+
+    c2 = create_contract(room1.id, tenant2.id, date(2026, 11, 1))
+    db.session.commit()
+    assert c2.status == Contract.ACTIVE and c2.active_room_id == room1.id
+
+
+def test_rule_1_api_returns_409_for_second_active_contract(client, basic, seed_data):
+    body = {"room_id": seed_data["room1"].id, "tenant_id": seed_data["tenant1"].id, "start_date": "2026-11-01"}
+    assert client.post("/api/contracts", json=body, headers=basic).status_code == 201
+    body["tenant_id"] = seed_data["tenant2"].id
+    assert client.post("/api/contracts", json=body, headers=basic).status_code == 409
+
+
+# ==========================================
 # TEST 3: Aturan Bisnis 2 (Prorata Bulan Pertama)
 # ==========================================
 def test_rule_2_prorated_first_month(app):

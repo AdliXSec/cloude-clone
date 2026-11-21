@@ -1,6 +1,8 @@
 """Model database KosanHub."""
 from datetime import datetime, timezone
 
+from sqlalchemy import event
+
 from kosanhub import db
 
 
@@ -93,6 +95,11 @@ class Contract(db.Model):
     end_date = db.Column(db.Date, nullable=True)
     monthly_price = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(10), nullable=False, default=ACTIVE, index=True)
+    # Penjaga aturan bisnis 1 di level database: berisi room_id selama kontrak ACTIVE, NULL bila
+    # tidak. UNIQUE mengizinkan banyak NULL (MySQL & SQLite), sehingga hanya satu kontrak ACTIVE
+    # per kamar yang bisa ada, bahkan bila dua request lolos cek di level aplikasi bersamaan.
+    # Nilainya diisi otomatis oleh listener di bawah, jangan diisi manual.
+    active_room_id = db.Column(db.Integer, nullable=True, unique=True)
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
 
     room = db.relationship("Room", back_populates="contracts")
@@ -109,6 +116,12 @@ class Contract(db.Model):
             "monthly_price": self.monthly_price,
             "status": self.status,
         }
+
+
+@event.listens_for(Contract, "before_insert")
+@event.listens_for(Contract, "before_update")
+def _sync_active_room_id(mapper, connection, target):
+    target.active_room_id = target.room_id if target.status == Contract.ACTIVE else None
 
 
 class Bill(db.Model):

@@ -29,6 +29,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 checkout scm
                 sh 'git log -1 --oneline'
             }
@@ -38,6 +39,7 @@ pipeline {
         // => pipeline berhenti dan container yang sedang jalan tidak disentuh.
         stage('Test') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 sh 'docker build --target test -t kosanhub-test:${BUILD_NUMBER} .'
             }
         }
@@ -45,6 +47,7 @@ pipeline {
         // Layer stage test sudah di-cache, jadi hanya merakit stage production.
         stage('Build Image') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 sh '''
                     docker build --target production \
                         -t "${IMAGE}:${BUILD_NUMBER}" -t "${IMAGE}:latest" .
@@ -54,6 +57,7 @@ pipeline {
 
         stage('Push Image') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
                                                   usernameVariable: 'DH_USER',
                                                   passwordVariable: 'DH_TOKEN')]) {
@@ -70,6 +74,7 @@ pipeline {
         // Deploy dari image yang baru di-push (bukan build lokal). Volume data TIDAK dihapus.
         stage('Deploy') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 withCredentials([file(credentialsId: 'kosanhub-env', variable: 'ENV_FILE')]) {
                     sh '''
                         DC="docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE}"
@@ -86,6 +91,7 @@ pipeline {
         // 3) K12: picu job tagihan, lalu pastikan container worker menyelesaikannya.
         stage('Smoke Test') {
             steps {
+                script { env.FAILED_STAGE = env.STAGE_NAME }
                 withCredentials([file(credentialsId: 'kosanhub-env', variable: 'ENV_FILE')]) {
                     sh '''#!/usr/bin/env bash
                         set -eu
@@ -129,11 +135,35 @@ pipeline {
         }
     }
 
+    // Ringkasan hasil di console log. Hanya metadata build, tidak ada rahasia yang dicetak.
     post {
+        success {
+            echo """
+==================== RINGKASAN: SUCCESS ====================
+ Job      : ${env.JOB_NAME} #${env.BUILD_NUMBER}
+ Hasil    : SUCCESS (semua stage lolos, termasuk Smoke Test + worker K12)
+ Image    : ${env.IMAGE}:${env.BUILD_NUMBER} (juga di-tag :latest, sudah di-push)
+ Deploy   : compose project '${env.COMPOSE_PROJECT_NAME}' memakai ${env.COMPOSE_FILE}
+ Durasi   : ${currentBuild.durationString.replace(' and counting', '')}
+ Detail   : ${env.BUILD_URL}
+============================================================"""
+        }
         failure {
+            echo """
+==================== RINGKASAN: FAILURE ====================
+ Job      : ${env.JOB_NAME} #${env.BUILD_NUMBER}
+ Hasil    : FAILURE, pipeline berhenti di stage '${env.FAILED_STAGE ?: 'tidak diketahui'}'
+ Image    : ${env.IMAGE}:${env.BUILD_NUMBER}
+ Catatan  : bila gagal di Test/Build/Push, container yang sedang berjalan tidak disentuh
+ Durasi   : ${currentBuild.durationString.replace(' and counting', '')}
+ Detail   : ${env.BUILD_URL}console
+============================================================"""
             withCredentials([file(credentialsId: 'kosanhub-env', variable: 'ENV_FILE')]) {
                 sh 'docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} logs --tail=40 app worker || true'
             }
+        }
+        aborted {
+            echo "RINGKASAN: ABORTED - ${env.JOB_NAME} #${env.BUILD_NUMBER} dihentikan di stage '${env.FAILED_STAGE ?: 'tidak diketahui'}'"
         }
         always {
             sh 'docker image rm kosanhub-test:${BUILD_NUMBER} || true'

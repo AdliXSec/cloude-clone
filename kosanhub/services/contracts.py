@@ -1,6 +1,8 @@
 """Kontrak sewa & pembayaran."""
 from datetime import date
 
+from sqlalchemy.exc import IntegrityError
+
 from kosanhub import db
 from kosanhub.errors import ConflictError, NotFoundError, ValidationError
 from kosanhub.models import Bill, Contract, Payment, Room, Tenant
@@ -36,7 +38,13 @@ def create_contract(room_id, tenant_id, start_date, monthly_price=None, end_date
         monthly_price=price,
         status=Contract.ACTIVE,
     )
-    db.session.add(contract)
+    try:
+        with db.session.begin_nested():
+            db.session.add(contract)
+            db.session.flush()
+    except IntegrityError:
+        # Jaring pengaman terakhir: UNIQUE(active_room_id) di database menolak kontrak aktif ganda.
+        raise ConflictError(f"Kamar {room.number} masih memiliki kontrak aktif")
     return contract
 
 
